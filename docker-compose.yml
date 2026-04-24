@@ -1,0 +1,59 @@
+version: "3.8"
+
+services:
+  # ==================== PostgreSQL ====================
+  postgres:
+    image: postgres:16-alpine
+    # alpine = image เล็กกว่า ใช้ resource น้อยกว่า
+    container_name: hospital_postgres
+    restart: unless-stopped
+    # restart อัตโนมัติทุกครั้ง ยกเว้นกรณี stop เอง
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: hospital_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  # ==================== Go API ====================
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: hospital_api
+  #   restart: unless-stopped
+  #   environment:
+  #     DB_HOST: postgres
+  #     # ใช้ชื่อ service แทน localhost เพราะอยู่ใน docker network เดียวกัน
+  #     DB_PORT: 5432
+  #     DB_USER: postgres
+  #     DB_PASSWORD: yourpassword
+  #     DB_NAME: hospital_db
+  #     HOSPITAL_A_BASE_URL: https://hospital-a.api.co.th
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #       # รอให้ postgres healthcheck ผ่านก่อนค่อย start api
+  #   ports:
+  #     - "8080:8080"
+
+  # # ==================== Nginx ====================
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: hospital_nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #     # รับ traffic จากภายนอกที่ port 80
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     # ro = read-only ใน container
+  #   depends_on:
+  #     - api
+  #     # รอให้ api start ก่อน
+
+volumes:
+  postgres_data:
+  # named volume — Docker จัดการให้ ข้อมูลไม่หายแม้ restart

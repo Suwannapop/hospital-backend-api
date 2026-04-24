@@ -1,0 +1,17 @@
+# Environment — เก็บ password และ config ลับ ห้าม commit เด็ดขาด
+.env
+
+# Binary ที่ build แล้ว — ไม่จำเป็นต้อง track
+server
+
+# Go build cache
+*.exe
+*.out
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

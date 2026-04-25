@@ -15,6 +15,8 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
+
+    // สร้าง connection string
     dsn := fmt.Sprintf(
         "host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=Asia/Bangkok",
         os.Getenv("DB_HOST"),
@@ -24,11 +26,14 @@ func ConnectDB() {
         os.Getenv("DB_NAME"),
     )
 
+
+    //เชื่อมต่อ DB ผ่าน GORM
     db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
         Logger: logger.Default.LogMode(logger.Info),
-        // print SQL query ทุกครั้ง ช่วย debug
+        // print SQL ทุก query (debug ง่ายมาก)
         // ตอน production เปลี่ยนเป็น logger.Silent
     })
+
     if err != nil {
         log.Fatal("❌ เชื่อมต่อ DB ไม่ได้:", err)
     }
@@ -39,7 +44,7 @@ func ConnectDB() {
         log.Fatal("❌ ดึง sql.DB ไม่ได้:", err)
     }
     sqlDB.SetMaxOpenConns(10)   // connection พร้อมกันสูงสุด 10 อัน
-    sqlDB.SetMaxIdleConns(5)    // connection standby ไว้ 5 อัน
+    sqlDB.SetMaxIdleConns(5)    // connection ไว้เฉย ๆ” ได้สูงสุด 5 อัน
     
     DB = db
     log.Println("✅ เชื่อมต่อ DB สำเร็จ")

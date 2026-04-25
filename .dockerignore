@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Binary
+server
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+*.swp
+
+# Test
+tests/
+
+# Git
+.git/
+.gitignore

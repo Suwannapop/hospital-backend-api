@@ -48,7 +48,7 @@
 
 ```bash
 # Clone the repo
-git clone https://github.com/<your-username>/hospital-backend-api.git
+git clone https://github.com/Suwannapop/hospital-backend-api.git
 cd hospital-backend-api
 
 # Start all services (PostgreSQL + Go API + Nginx)

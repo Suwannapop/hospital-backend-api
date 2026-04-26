@@ -12,33 +12,23 @@ import (
 
 func CreatePatient(c *gin.Context) {
 	var patient models.Patient
-	err := c.ShouldBindJSON(&patient)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	is_Error := c.ShouldBindJSON(&patient)
+	if is_Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": is_Error.Error()})
 		return
 	}
+
 	result := config.DB.Create(&patient)
 	if result.Error != nil {
 		if strings.Contains(result.Error.Error(), "duplicate key") {
-			errMsg := "ข้อมูลซ้ำ: ไม่สามารถบันทึกได้เนื่องจากมีข้อมูลนี้อยู่ในระบบแล้ว"
-			if strings.Contains(result.Error.Error(), "patient_hn") {
-				errMsg = "ข้อมูลซ้ำ: รหัสผู้ป่วย (HN) นี้มีอยู่ในระบบแล้ว"
-			} else if strings.Contains(result.Error.Error(), "national_id") {
-				errMsg = "ข้อมูลซ้ำ: รหัสบัตรประชาชนนี้มีอยู่ในระบบแล้ว"
-			} else if strings.Contains(result.Error.Error(), "passport_id") {
-				errMsg = "ข้อมูลซ้ำ: รหัสพาสปอร์ตนี้มีอยู่ในระบบแล้ว"
-			}
-			
-			c.JSON(http.StatusConflict, gin.H{
-				"message": errMsg,
-			})
+			c.JSON(http.StatusConflict, gin.H{"error": "ข้อมูลซ้ำ: ไม่สามารถบันทึกได้เนื่องจากมีข้อมูลนี้อยู่ในระบบแล้ว"})
 			return
 		}
 
 		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 		return
 	}
-	config.DB.Preload("Hospital").First(&patient, patient.ID)
+	config.DB.Preload("Hospital").First(&patient, patient.ID) // 
 	config.DB.Preload("Staff").First(&patient, patient.ID)
 	c.JSON(http.StatusOK, struct {
 		models.Patient
@@ -53,7 +43,6 @@ func CreatePatient(c *gin.Context) {
 			Patients: nil,
 		},
 	})
-	// c.JSON(http.StatusOK, patient)
 }
 
 func SearchPatientById(c *gin.Context) {

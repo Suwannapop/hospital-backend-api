@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 	"time"
 
 	"hospital-backend-api/config"
@@ -15,18 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Token Blacklist — เก็บ token ที่ถูก logout แล้ว
-var (
-	tokenBlacklist = make(map[string]bool)
-	blacklistMu    sync.RWMutex
-)
 
-// IsBlacklisted ตรวจว่า token อยู่ใน blacklist หรือไม่
-func IsBlacklisted(token string) bool {
-	blacklistMu.RLock()
-	defer blacklistMu.RUnlock()
-	return tokenBlacklist[token]
-}
 
 func CreateStaff(c *gin.Context) {
 	var body struct {
@@ -35,8 +23,9 @@ func CreateStaff(c *gin.Context) {
 		HospitalID uint   `json:"hospital_id" binding:"required"`
 	}
 
-	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	is_Error := c.ShouldBindJSON(&body)
+	if is_Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": is_Error.Error()})
 		return
 	}
 

@@ -9,9 +9,6 @@ import (
 func setupStaffRoutes(r *gin.Engine) {
 	api := r.Group("/staff")
 		{
-			api.GET("/", func(c *gin.Context) {
-				c.String(200, "Hello, World!")
-			})
 			api.POST("/create", handler.CreateStaff)
 			api.POST("/login", handler.LoginStaff)
 		}

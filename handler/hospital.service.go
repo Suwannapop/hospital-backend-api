@@ -13,10 +13,10 @@ func CreateHospital(c *gin.Context) {
     var hospital models.Hospital
 
     // 1. รับข้อมูลจาก request body
-	err := c.ShouldBindJSON(&hospital); 
-    if err != nil {
+	is_Error := c.ShouldBindJSON(&hospital); 
+    if is_Error != nil {
         c.JSON(http.StatusBadRequest, gin.H{
-            "error": err.Error(),
+            "error": is_Error.Error(),
         })
         return
     }
@@ -32,4 +32,16 @@ func CreateHospital(c *gin.Context) {
 
     // 3. ส่ง response กลับ
     c.JSON(http.StatusOK, hospital)
+}
+
+func GetHospitals(c *gin.Context) {
+	var hospitals []models.Hospital
+	result := config.DB.Find(&hospitals)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": result.Error.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, hospitals)
 }

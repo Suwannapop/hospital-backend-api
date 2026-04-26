@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -91,3 +92,67 @@ func TestCreateHospital_WithAddionalField(t *testing.T){
 	assert.Nil(t , resp["description"])
 
 }
+
+// ==================== GET /hospital/ ====================
+
+func TestGetHospitals_Success(t *testing.T) {
+	setupTestDB()
+	r := setupRouter()
+	r.GET("/hospital/", handler.GetHospitals)
+
+	// สร้าง hospital ใน DB ก่อน
+	seedHospital("โรงพยาบาล A")
+	seedHospital("โรงพยาบาล B")
+
+	w := performRequest(r, "GET", "/hospital/", nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// parse เป็น array
+	var hospitals []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &hospitals)
+
+	assert.Equal(t, 2, len(hospitals))
+	assert.Equal(t, "โรงพยาบาล A", hospitals[0]["Name"])
+	assert.Equal(t, "โรงพยาบาล B", hospitals[1]["Name"])
+}
+
+func TestGetHospitals_EmptyList(t *testing.T) {
+	setupTestDB()
+	r := setupRouter()
+	r.GET("/hospital/", handler.GetHospitals)
+
+	// ไม่ seed ข้อมูล — DB ว่าง
+	w := performRequest(r, "GET", "/hospital/", nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var hospitals []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &hospitals)
+
+	// ต้องได้ array ว่าง หรือ null
+	assert.True(t, len(hospitals) == 0 || hospitals == nil)
+}
+
+func TestGetHospitals_ReturnsAllFields(t *testing.T) {
+	setupTestDB()
+	r := setupRouter()
+	r.GET("/hospital/", handler.GetHospitals)
+
+	seedHospital("โรงพยาบาลตรวจ Fields")
+
+	w := performRequest(r, "GET", "/hospital/", nil)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var hospitals []map[string]interface{}
+	json.Unmarshal(w.Body.Bytes(), &hospitals)
+
+	assert.Equal(t, 1, len(hospitals))
+	h := hospitals[0]
+	assert.NotNil(t, h["ID"])
+	assert.Equal(t, "โรงพยาบาลตรวจ Fields", h["Name"])
+	assert.NotNil(t, h["CreatedAt"])
+	assert.NotNil(t, h["UpdatedAt"])
+}
+

@@ -6,8 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"hospital-backend-api/handler"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -35,12 +33,7 @@ func AuthRequired() gin.HandlerFunc {
 		}
 		tokenString := parts[1]
 
-		// 2.5 ตรวจว่า token ถูก logout (blacklist) แล้วหรือยัง
-		if handler.IsBlacklisted(tokenString) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "token นี้ถูก logout แล้ว กรุณาเข้าสู่ระบบใหม่"})
-			c.Abort()
-			return
-		}
+
 
 		// 3. Parse & validate token
 		jwtSecret := os.Getenv("JWT_SECRET")

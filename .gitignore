@@ -15,3 +15,7 @@ server
 # OS
 .DS_Store
 Thumbs.db
+
+
+.md
+.docx

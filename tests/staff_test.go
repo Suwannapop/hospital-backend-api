@@ -1,8 +1,8 @@
 package tests
 
 import (
+	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"hospital-backend-api/handler"
@@ -31,11 +31,10 @@ func TestCreateStaff_Success(t *testing.T) {
 
 	assert.Equal(t, http.StatusCreated, w.Code)
 	resp := parseResponse(w)
-	assert.Equal(t, "สร้าง Staff สำเร็จ", resp["message"])
 	// password ต้องไม่อยู่ใน response
-	data := resp["data"].(map[string]interface{})
-	assert.Equal(t, "nurse1", data["username"])
-	_, hasPassword := data["password"]
+	fmt.Println("resp:", resp)
+	assert.Equal(t, "nurse1", resp["username"])
+	_, hasPassword := resp["password"]
 	assert.False(t, hasPassword, "password ไม่ควรอยู่ใน response")
 }
 
@@ -194,7 +193,7 @@ func TestLoginStaff_WrongHospital(t *testing.T) {
 	r.POST("/staff/login", handler.LoginStaff)
 
 	hospital1 := seedHospital("Hospital X")
-	seedHospital("Hospital Y")
+	hospital2 := seedHospital("Hospital Y")
 
 	createBody := map[string]interface{}{
 		"username":    "staffX",
@@ -207,7 +206,7 @@ func TestLoginStaff_WrongHospital(t *testing.T) {
 	loginBody := map[string]interface{}{
 		"username":    "staffX",
 		"password":    "pass123",
-		"hospital_id": 999,
+		"hospital_id": hospital2.ID,
 	}
 
 	w := performRequest(r, "POST", "/staff/login", loginBody)
@@ -215,53 +214,6 @@ func TestLoginStaff_WrongHospital(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
-// ==================== POST /staff/logout ====================
-
-func TestLogoutStaff_Success(t *testing.T) {
-	setupTestDB()
-	r := setupRouter()
-	r.POST("/staff/create", handler.CreateStaff)
-	r.POST("/staff/login", handler.LoginStaff)
-	r.POST("/staff/logout", handler.LogoutStaff)
-
-	hospital := seedHospital("Hospital Logout")
-
-	token := loginAndGetToken(r, "logoutuser", "pass123", hospital.ID)
-
-	// Logout
-	w := performRequestWithAuth(r, "POST", "/staff/logout", token, nil)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	resp := parseResponse(w)
-	assert.Equal(t, "ออกจากระบบสำเร็จ", resp["message"])
-
-	// ตรวจว่า token ถูก blacklist แล้ว
-	assert.True(t, handler.IsBlacklisted(token))
-}
-
-func TestLogoutStaff_NoToken(t *testing.T) {
-	setupTestDB()
-	r := setupRouter()
-	r.POST("/staff/logout", handler.LogoutStaff)
-
-	w := performRequest(r, "POST", "/staff/logout", nil)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
-
-func TestLogoutStaff_InvalidFormat(t *testing.T) {
-	setupTestDB()
-	r := setupRouter()
-	r.POST("/staff/logout", handler.LogoutStaff)
-
-	// ส่ง header แบบผิดรูปแบบ (ไม่มี "Bearer")
-	req, _ := http.NewRequest("POST", "/staff/logout", nil)
-	req.Header.Set("Authorization", "InvalidFormat token123")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-}
 
 // ==================== Middleware: AuthRequired ====================
 
@@ -316,26 +268,3 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 	assert.NotNil(t, resp["hospital_id"])
 }
 
-func TestAuthMiddleware_BlacklistedToken(t *testing.T) {
-	setupTestDB()
-	r := setupRouter()
-	r.POST("/staff/create", handler.CreateStaff)
-	r.POST("/staff/login", handler.LoginStaff)
-	r.POST("/staff/logout", handler.LogoutStaff)
-	r.GET("/protected", middleware.AuthRequired(), func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "ok"})
-	})
-
-	hospital := seedHospital("Hospital Blacklist")
-	token := loginAndGetToken(r, "blacklistuser", "pass123", hospital.ID)
-
-	// Logout → token ถูก blacklist
-	performRequestWithAuth(r, "POST", "/staff/logout", token, nil)
-
-	// ใช้ token เดิม → ต้อง 401
-	w := performRequestWithAuth(r, "GET", "/protected", token, nil)
-
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	resp := parseResponse(w)
-	assert.Contains(t, resp["error"], "logout")
-}

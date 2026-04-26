@@ -66,15 +66,17 @@ func CreateStaff(c *gin.Context) {
 	// Preload Hospital เพื่อส่งข้อมูล hospital กลับไปด้วย
 	config.DB.Preload("Hospital").First(&staff, staff.ID)
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "สร้าง Staff สำเร็จ",
-		"data": gin.H{
-			"id":          staff.ID,
-			"username":    staff.Username,
-			"hospital_id": staff.HospitalID,
-			"hospital":    staff.Hospital,
-			"created_at":  staff.CreatedAt,
-		},
+
+	c.JSON(http.StatusCreated, struct {
+		ID        uint           `json:"id"`
+		Username  string         `json:"username"`
+		Hospital  models.Hospital `json:"hospital"`
+		CreatedAt time.Time      `json:"created_at"`
+	}{
+		ID:        staff.ID,
+		Username:  staff.Username,
+		Hospital:  staff.Hospital,
+		CreatedAt: staff.CreatedAt,
 	})
 }
 
@@ -135,24 +137,3 @@ func LoginStaff(c *gin.Context) {
 	})
 }
 
-func LogoutStaff(c *gin.Context) {
-	// ดึง token จาก Authorization header
-	authHeader := c.GetHeader("Authorization")
-	if authHeader == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ไม่พบ token"})
-		return
-	}
-
-	parts := strings.SplitN(authHeader, " ", 2)
-	if len(parts) != 2 || parts[0] != "Bearer" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "รูปแบบ token ไม่ถูกต้อง"})
-		return
-	}
-
-	// เพิ่ม token เข้า blacklist
-	blacklistMu.Lock()
-	tokenBlacklist[parts[1]] = true
-	blacklistMu.Unlock()
-
-	c.JSON(http.StatusOK, gin.H{"message": "ออกจากระบบสำเร็จ"})
-}

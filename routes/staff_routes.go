@@ -14,7 +14,6 @@ func setupStaffRoutes(r *gin.Engine) {
 			})
 			api.POST("/create", handler.CreateStaff)
 			api.POST("/login", handler.LoginStaff)
-			api.POST("/logout", handler.LogoutStaff)
 		}
 	
 }
